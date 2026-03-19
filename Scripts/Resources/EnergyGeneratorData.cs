@@ -2,15 +2,15 @@ using Godot;
 
 namespace Project187
 {
-	/// Base resource for describing how an attack's energy pool is filled.
+	/// Base resource for describing how an attack's energy source is configured.
 	[GlobalClass]
 	public partial class EnergyGeneratorData : Resource
 	{
-		/// Energy delivered per event (meaning depends on subclass).
-		[Export] public float EnergyPerEvent { get; set; } = 10f;
+		/// Fraction of base damage the triggered attack deals (0–1, where 1 = full damage).
+		[Export] public float Efficiency { get; set; } = 1.0f;
 
 		/// Fully-qualified C# class name of the concrete EnergyGeneratorBase subclass.
-		/// E.g. "Project187.TimedEnergyGenerator". Drives instantiation in AttackManager.
+		/// E.g. "Project187.EnergyCore". Drives instantiation in AttackManager.
 		[Export] public string ImplementingClass { get; set; } = "";
 
 		/// The attack this generator or observer powers.
@@ -30,15 +30,16 @@ namespace Project187
 		}
 	}
 
-	/// Delivers EnergyPerSecond continuously via _Process.
+	/// Triggers its attack on a fixed time interval.
 	[GlobalClass]
-	public partial class TimedGeneratorData : EnergyGeneratorData
+	public partial class EnergyCoreData : EnergyGeneratorData
 	{
-		[Export] public float EnergyPerSecond { get; set; } = 10f;
+		/// Seconds between each trigger.
+		[Export] public float TriggerInterval { get; set; } = 1.0f;
 	}
 
-	/// Abstract base for observer data — no SourceAttackId needed;
-	/// the observer resolves its source from its parent AttackInstance in the scene tree.
+	/// Abstract base for observer data.
+	/// The observer resolves its source from its parent AttackInstance in the scene tree.
 	public abstract partial class ObserverData : EnergyGeneratorData { }
 
 	/// Delivers EnergyPerEvent each time the parent attack hits an enemy.

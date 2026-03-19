@@ -6,7 +6,7 @@ namespace Project187
     /// Concrete attacks (e.g. ShockPulse) inherit from this to express their type.
     public abstract partial class AreaAttackBase : AttackInstance
     {
-        protected override void ExecuteFire()
+        protected override void ExecuteFire(float efficiency)
         {
             if (Data.ProjectileScene == null)
             {
@@ -14,8 +14,11 @@ namespace Project187
                 return;
             }
 
-            var stats = GetComputedStats();
-            var owner = OwnerPlayer;
+            var stats  = GetComputedStats();
+            var owner  = OwnerPlayer;
+
+            // Scale damage by efficiency before the area effect node picks it up.
+            stats.BaseDamage *= efficiency;
 
             var area = Data.ProjectileScene.Instantiate<AreaEffectNode>();
             area.Initialize(this, stats);

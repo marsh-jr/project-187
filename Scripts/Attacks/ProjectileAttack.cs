@@ -4,7 +4,7 @@ namespace Project187
 {
 	public partial class ProjectileAttack : AttackInstance
 	{
-		protected override void ExecuteFire()
+		protected override void ExecuteFire(float efficiency)
 		{
 			if (Data.ProjectileScene == null)
 			{
@@ -33,7 +33,7 @@ namespace Project187
 					ownerAttack:  this,
 					direction:    direction,
 					speed:        stats.ProjectileSpeed * fireParams.SpeedMultiplier,
-					damage:       stats.BaseDamage * fireParams.DamageMultiplier,
+					damage:       stats.BaseDamage * efficiency * fireParams.DamageMultiplier,
 					isPiercing:   fireParams.IsPiercing,
 					isHoming:     fireParams.IsHoming,
 					bounces:      fireParams.RicochetBounces

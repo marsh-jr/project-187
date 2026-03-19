@@ -12,9 +12,13 @@ namespace Project187
 		/// Always the AttackInstance that owns this observer as a child.
 		protected AttackInstance SourceAttack { get; private set; }
 
+		/// Efficiency passed to the triggered attack (scales its damage).
+		protected float Efficiency { get; private set; }
+
 		public override void Initialize(EnergyGeneratorData config, AttackManager manager)
 		{
-			Config = config;
+			Config     = config;
+			Efficiency = config.Efficiency;
 
 			// Source is the parent AttackInstance — set via AddChild before Initialize is called.
 			SourceAttack = GetParent<AttackInstance>();

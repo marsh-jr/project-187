@@ -6,7 +6,7 @@ namespace Project187
 	/// Concrete attacks (e.g. MachineGun) inherit from this to express their type.
 	public abstract partial class ProjectileAttackBase : AttackInstance
 	{
-		protected override void ExecuteFire()
+		protected override void ExecuteFire(float efficiency)
 		{
 			if (Data.ProjectileScene == null)
 			{
@@ -34,7 +34,7 @@ namespace Project187
 					ownerAttack:  this,
 					direction:    direction,
 					speed:        stats.ProjectileSpeed * fireParams.SpeedMultiplier,
-					damage:       stats.BaseDamage * fireParams.DamageMultiplier,
+					damage:       stats.BaseDamage * efficiency * fireParams.DamageMultiplier,
 					isPiercing:   fireParams.IsPiercing,
 					isHoming:     fireParams.IsHoming,
 					bounces:      fireParams.RicochetBounces

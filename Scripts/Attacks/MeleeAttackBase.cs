@@ -5,7 +5,7 @@ namespace Project187
 	/// Abstract base for all melee-type attacks. Full implementation in Phase 7.
 	public abstract partial class MeleeAttackBase : AttackInstance
 	{
-		protected override void ExecuteFire()
+		protected override void ExecuteFire(float efficiency)
 		{
 			var stats = GetComputedStats();
 			var owner = OwnerPlayer;

@@ -15,10 +15,6 @@ namespace Project187
 		[Export] public AttackType Type        { get; set; } = AttackType.Projectile;
 		[Export] public DamageType DamageType  { get; set; } = DamageType.Kinetic;
 
-		// ── Energy ─────────────────────────────────────────────────────────────
-		/// Attack fires when CurrentEnergy reaches this value.
-		[Export] public float EnergyThreshold  { get; set; } = 100f;
-
 		// ── Base Stats ─────────────────────────────────────────────────────────
 		[Export] public float BaseDamage       { get; set; } = 10f;
 		[Export] public float ProjectileSpeed  { get; set; } = 400f;

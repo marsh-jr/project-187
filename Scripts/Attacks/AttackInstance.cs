@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Project187
 {
 	/// Runtime node representing one active attack on the player.
-	/// Holds the energy pool, adaptation list, and fires when threshold is reached.
+	/// Fired directly by its parent generator/observer with a damage efficiency value.
 	public abstract partial class AttackInstance : Node2D
 	{
 		// ── Signals ────────────────────────────────────────────────────────────
@@ -15,7 +15,6 @@ namespace Project187
 		// ── State ──────────────────────────────────────────────────────────────
 		public AttackData Data             { get; private set; }
 		public string AttackId             { get; private set; }
-		public float CurrentEnergy         { get; private set; }
 		public int AdaptationSlotCount     { get; private set; }
 		public List<IAdaptation> Adaptations { get; } = new();
 
@@ -71,26 +70,19 @@ namespace Project187
 			}
 		}
 
-		// ── Energy ─────────────────────────────────────────────────────────────
-		public void AddEnergy(float amount)
-		{
-			CurrentEnergy += amount;
-			if (CurrentEnergy >= Data.EnergyThreshold)
-			{
-				CurrentEnergy -= Data.EnergyThreshold;
-				TryFire();
-			}
-		}
-
-		private void TryFire()
+		// ── Trigger ────────────────────────────────────────────────────────────
+		/// Called by a generator or observer to fire this attack.
+		/// efficiency (0–1) scales the resulting damage.
+		public void Trigger(float efficiency)
 		{
 			EmitSignal(SignalName.AttackFired, this);
-			ExecuteFire();
+			ExecuteFire(efficiency);
 		}
 
 		// ── Hooks ──────────────────────────────────────────────────────────────
 		/// Subclasses implement the actual spawn logic.
-		protected abstract void ExecuteFire();
+		/// efficiency is applied to BaseDamage before spawning projectiles/areas.
+		protected abstract void ExecuteFire(float efficiency);
 
 		/// Called by ProjectileNode / AreaEffectNode when a hit is detected.
 		public HitResult RegisterHit(Node enemy, float rawDamage)

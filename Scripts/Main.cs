@@ -34,6 +34,7 @@ namespace Project187
 			var areaScene       = GD.Load<PackedScene>("res://Scenes/Attacks/AreaEffect.tscn");
 
 			// Shock Pulse — terminal attack (no chain slots of its own)
+			// Triggered by OnHit observer at 30% efficiency → 25 × 0.3 = 7.5 dmg per pulse tick
 			var shockPulseData = new AttackData
 			{
 				ImplementingClass  = "Project187.ShockPulse",
@@ -41,7 +42,6 @@ namespace Project187
 				AttackName         = "Shock Pulse",
 				Type               = AttackType.Area,
 				BaseDamage         = 25f,
-				EnergyThreshold    = 100f,
 				AreaRadius         = 100f,
 				AreaDuration       = 1.2f,
 				PulseInterval      = 0.3f,
@@ -50,7 +50,8 @@ namespace Project187
 				ChainSlots         = new Array<EnergyGeneratorData>()
 			};
 
-			// Machine Gun — chains into ShockPulse via an OnHit observer (3 hits = 1 pulse)
+			// Machine Gun — triggered by EnergyCore at 90% efficiency → 15 × 0.9 = 13.5 dmg
+			// Chains into ShockPulse: every hit triggers ShockPulse at 30% efficiency
 			var machineGunData = new AttackData
 			{
 				ImplementingClass  = "Project187.MachineGun",
@@ -58,7 +59,6 @@ namespace Project187
 				AttackName         = "Machine Gun",
 				Type               = AttackType.Projectile,
 				BaseDamage         = 15f,
-				EnergyThreshold    = 100f,
 				ProjectileSpeed    = 500f,
 				MaxAdaptationSlots = 3,
 				ProjectileScene    = projectileScene,
@@ -67,23 +67,24 @@ namespace Project187
 					new OnHitGeneratorData
 					{
 						ImplementingClass = "Project187.OnHitEnergyGenerator",
-						EnergyPerEvent    = 34f,   // 3 MachineGun hits → 102 energy → ShockPulse fires
+						Efficiency        = 0.30f,
 						Attack            = shockPulseData
 					}
 				}
 			};
 
-			// Root generator: timed, fires MachineGun ~once per second
-			var timedGen = new TimedGeneratorData
+			// EnergyCore: triggers MachineGun every 0.9s at 90% damage efficiency
+			var energyCore = new EnergyCoreData
 			{
-				ImplementingClass = "Project187.TimedEnergyGenerator",
-				EnergyPerSecond   = 100f,
+				ImplementingClass = "Project187.EnergyCore",
+				TriggerInterval   = 0.9f,
+				Efficiency        = 0.90f,
 				Attack            = machineGunData
 			};
 
-			player.AttackManager.Initialize(new Array<EnergyGeneratorData> { timedGen });
+			player.AttackManager.Initialize(new Array<EnergyGeneratorData> { energyCore });
 
-			GD.Print("[Main] Bootstrapped: TimedGen → MachineGun → OnHitObserver → ShockPulse");
+			GD.Print("[Main] Bootstrapped: EnergyCore (0.9s) → MachineGun (90%) → OnHit → ShockPulse (30%)");
 		}
 
 		/// Debug: press Tab to equip a PiercingAdaptation on the MachineGun.
