@@ -2,7 +2,7 @@ using Godot;
 
 namespace Project187
 {
-    public partial class TimedEnergyGenerator : EnergyGeneratorBase
+    public partial class TimedEnergyGenerator : EnergyGenerator
     {
         private float _energyPerSecond;
 

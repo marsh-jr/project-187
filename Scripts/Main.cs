@@ -33,42 +33,49 @@ namespace Project187
 			var projectileScene = GD.Load<PackedScene>("res://Scenes/Attacks/Projectile.tscn");
 			var areaScene       = GD.Load<PackedScene>("res://Scenes/Attacks/AreaEffect.tscn");
 
-			// ── Machine Gun (Timed → fires every 1 second) ──────────────────────
+			// Machine Gun: timed generator, fires ~every 1 second
 			var machineGun = new AttackData
 			{
-				AttackId        = "MachineGun",
-				AttackName      = "Machine Gun",
-				Type            = AttackType.Projectile,
-				BaseDamage      = 15f,
-				EnergyThreshold = 100f,
-				ProjectileSpeed = 500f,
+				ImplementingClass  = "Project187.MachineGun",
+				AttackId           = "MachineGun",
+				AttackName         = "Machine Gun",
+				Type               = AttackType.Projectile,
+				BaseDamage         = 15f,
+				EnergyThreshold    = 100f,
+				ProjectileSpeed    = 500f,
 				MaxAdaptationSlots = 3,
-				ProjectileScene = projectileScene,
-				GeneratorConfigs = new Array<EnergyGeneratorData>
+				ProjectileScene    = projectileScene,
+				GeneratorConfigs   = new Array<EnergyGeneratorData>
 				{
-					new TimedGeneratorData { EnergyPerSecond = 100f } // fires ~every 1s
+					new TimedGeneratorData
+					{
+						ImplementingClass = "Project187.TimedEnergyGenerator",
+						EnergyPerSecond   = 100f
+					}
 				}
 			};
 
-			// ── Shock Pulse (OnHit → fires after 3 machine gun hits) ────────────
+			// Shock Pulse: on-hit observer, fires after 3 MachineGun hits
 			var shockPulse = new AttackData
 			{
-				AttackId        = "ShockPulse",
-				AttackName      = "Shock Pulse",
-				Type            = AttackType.Area,
-				BaseDamage      = 25f,
-				EnergyThreshold = 100f,
-				AreaRadius      = 100f,
-				AreaDuration    = 1.2f,
-				PulseInterval   = 0.3f,
+				ImplementingClass  = "Project187.ShockPulse",
+				AttackId           = "ShockPulse",
+				AttackName         = "Shock Pulse",
+				Type               = AttackType.Area,
+				BaseDamage         = 25f,
+				EnergyThreshold    = 100f,
+				AreaRadius         = 100f,
+				AreaDuration       = 1.2f,
+				PulseInterval      = 0.3f,
 				MaxAdaptationSlots = 2,
-				ProjectileScene = areaScene,
-				GeneratorConfigs = new Array<EnergyGeneratorData>
+				ProjectileScene    = areaScene,
+				GeneratorConfigs   = new Array<EnergyGeneratorData>
 				{
 					new OnHitGeneratorData
 					{
-						SourceAttackId = "MachineGun",
-						EnergyPerEvent = 34f  // 3 hits = ~100 energy = fires
+						ImplementingClass = "Project187.OnHitEnergyGenerator",
+						SourceAttackId    = "MachineGun",
+						EnergyPerEvent    = 34f  // 3 hits = ~100 energy = fires
 					}
 				}
 			};
@@ -76,7 +83,7 @@ namespace Project187
 			var startingAttacks = new Array<AttackData> { machineGun, shockPulse };
 			player.AttackManager.Initialize(startingAttacks);
 
-			GD.Print("[Main] Bootstrapped test attacks: MachineGun → ShockPulse chain");
+			GD.Print("[Main] Bootstrapped test attacks: MachineGun -> ShockPulse chain");
 		}
 
 		/// Debug: press Tab to equip a PiercingAdaptation on the MachineGun.

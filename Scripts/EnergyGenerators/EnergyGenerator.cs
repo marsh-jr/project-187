@@ -1,9 +1,8 @@
-using Godot;
-
 namespace Project187
 {
-    /// Abstract base for all energy generators. Subclasses push energy into TargetAttack.
-    public abstract partial class EnergyGeneratorBase : Node
+    /// Abstract base for energy sources that operate independently —
+    /// no dependency on other attacks (timed, tick-based, passive).
+    public abstract partial class EnergyGenerator : Godot.Node
     {
         public AttackInstance TargetAttack { get; protected set; }
         public EnergyGeneratorData Config  { get; protected set; }

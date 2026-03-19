@@ -11,19 +11,17 @@ namespace Project187
 
 		public void Initialize(Array<AttackData> startingAttacks)
 		{
-			// Phase 1: instantiate all AttackInstances and register them
+			// Phase 1: instantiate all AttackInstances and register them by ID
 			foreach (var data in startingAttacks)
 			{
 				if (data == null) continue;
 
-				AttackInstance instance = data.Type switch
+				var instance = data.CreateRuntimeInstance();
+				if (instance == null)
 				{
-					AttackType.Projectile => new ProjectileAttack(),
-					AttackType.Area       => new AreaAttack(),
-					AttackType.Beam       => new BeamAttack(),
-					AttackType.Melee      => new MeleeAttack(),
-					_                     => new ProjectileAttack(),
-				};
+					GD.PushWarning($"AttackManager: could not instantiate attack '{data.AttackId}' — ImplementingClass not set or invalid.");
+					continue;
+				}
 
 				AddChild(instance);
 				instance.Initialize(data, this);
@@ -33,7 +31,7 @@ namespace Project187
 					_attackById[data.AttackId] = instance;
 			}
 
-			// Phase 2: create generators (after all attacks are registered so cross-refs resolve)
+			// Phase 2: create generators (after all attacks registered so cross-refs resolve)
 			foreach (var data in startingAttacks)
 			{
 				if (data == null) continue;
@@ -43,16 +41,19 @@ namespace Project187
 				{
 					if (genConfig == null) continue;
 
-					EnergyGeneratorBase gen = genConfig switch
+					var node = genConfig.CreateRuntimeInstance();
+					if (node == null)
 					{
-						TimedGeneratorData  => new TimedEnergyGenerator(),
-						OnHitGeneratorData  => new OnHitEnergyGenerator(),
-						OnKillGeneratorData => new OnKillEnergyGenerator(),
-						_                   => new TimedEnergyGenerator(),
-					};
+						GD.PushWarning($"AttackManager: could not instantiate generator for '{data.AttackId}' — ImplementingClass not set or invalid.");
+						continue;
+					}
 
-					AddChild(gen);
-					gen.Initialize(targetAttack, genConfig, this);
+					AddChild(node);
+
+					if (node is EnergyGenerator gen)
+						gen.Initialize(targetAttack, genConfig, this);
+					else if (node is EnergyObserver obs)
+						obs.Initialize(targetAttack, genConfig, this);
 				}
 			}
 		}
@@ -73,12 +74,21 @@ namespace Project187
 			if (attack.Adaptations.Count >= attack.AdaptationSlotCount) return false;
 
 			bool canEquip = adaptation.Category == AdaptationCategory.Universal
-						 || (int)adaptation.Category == (int)attack.Data.Type;
+						 || IsCompatible(attack, adaptation.Category);
 
 			if (!canEquip) return false;
 
 			attack.Adaptations.Add(adaptation);
 			return true;
 		}
+
+		private static bool IsCompatible(AttackInstance attack, AdaptationCategory category) => category switch
+		{
+			AdaptationCategory.Projectile => attack is ProjectileAttackBase,
+			AdaptationCategory.Area       => attack is AreaAttackBase,
+			AdaptationCategory.Beam       => attack is BeamAttackBase,
+			AdaptationCategory.Melee      => attack is MeleeAttackBase,
+			_                             => false,
+		};
 	}
 }

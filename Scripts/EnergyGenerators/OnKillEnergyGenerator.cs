@@ -1,35 +1,14 @@
-using Godot;
-
 namespace Project187
 {
-    public partial class OnKillEnergyGenerator : EnergyGeneratorBase
+    public partial class OnKillEnergyGenerator : EnergyObserver
     {
-        private AttackInstance _watchedAttack;
+        protected override void Subscribe(AttackInstance source)
+            => source.EnemyKilled += OnSourceKill;
 
-        public override void Initialize(AttackInstance target, EnergyGeneratorData config, AttackManager manager)
-        {
-            TargetAttack = target;
-            Config = config;
+        protected override void Unsubscribe(AttackInstance source)
+            => source.EnemyKilled -= OnSourceKill;
 
-            if (config is OnKillGeneratorData onKillData)
-            {
-                _watchedAttack = manager.GetAttackById(onKillData.SourceAttackId);
-                if (_watchedAttack != null)
-                    _watchedAttack.EnemyKilled += OnSourceKill;
-                else
-                    GD.PushWarning($"OnKillEnergyGenerator: attack '{onKillData.SourceAttackId}' not found.");
-            }
-        }
-
-        public override void _ExitTree()
-        {
-            if (_watchedAttack != null)
-                _watchedAttack.EnemyKilled -= OnSourceKill;
-        }
-
-        private void OnSourceKill(AttackInstance source, Node enemy)
-        {
-            TargetAttack?.AddEnergy(Config.EnergyPerEvent);
-        }
+        private void OnSourceKill(AttackInstance source, Godot.Node enemy)
+            => TargetAttack?.AddEnergy(Config.EnergyPerEvent);
     }
 }

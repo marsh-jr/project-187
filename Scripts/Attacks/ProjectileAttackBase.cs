@@ -2,13 +2,15 @@ using Godot;
 
 namespace Project187
 {
-    public partial class ProjectileAttack : AttackInstance
+    /// Abstract base for all projectile-type attacks.
+    /// Concrete attacks (e.g. MachineGun) inherit from this to express their type.
+    public abstract partial class ProjectileAttackBase : AttackInstance
     {
         protected override void ExecuteFire()
         {
             if (Data.ProjectileScene == null)
             {
-                GD.PushWarning($"ProjectileAttack '{AttackId}': no ProjectileScene assigned.");
+                GD.PushWarning($"{GetType().Name} '{AttackId}': no ProjectileScene assigned.");
                 return;
             }
 
@@ -20,8 +22,7 @@ namespace Project187
             {
                 var proj = Data.ProjectileScene.Instantiate<ProjectileNode>();
 
-                // Calculate spread direction
-                float baseAngle   = owner.Rotation; // face direction (0 = right)
+                float baseAngle   = owner.Rotation;
                 float totalSpread = fireParams.SpreadAngleDegrees;
                 float angleOffset = fireParams.ProjectileCount > 1
                     ? Mathf.DegToRad(totalSpread / (fireParams.ProjectileCount - 1) * i - totalSpread / 2f)

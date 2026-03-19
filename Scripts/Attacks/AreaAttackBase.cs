@@ -2,13 +2,15 @@ using Godot;
 
 namespace Project187
 {
-    public partial class AreaAttack : AttackInstance
+    /// Abstract base for all area-type attacks.
+    /// Concrete attacks (e.g. ShockPulse) inherit from this to express their type.
+    public abstract partial class AreaAttackBase : AttackInstance
     {
         protected override void ExecuteFire()
         {
             if (Data.ProjectileScene == null)
             {
-                GD.PushWarning($"AreaAttack '{AttackId}': no ProjectileScene assigned.");
+                GD.PushWarning($"{GetType().Name} '{AttackId}': no ProjectileScene assigned.");
                 return;
             }
 

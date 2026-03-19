@@ -41,5 +41,23 @@ namespace Project187
 
         // ── Default Adaptations ────────────────────────────────────────────────
         [Export] public Array<AdaptationData> DefaultAdaptations { get; set; } = new();
+
+        // ── Runtime instantiation ───────────────────────────────────────────────
+        /// Fully-qualified C# class name of the concrete AttackInstance subclass.
+        /// E.g. "Project187.MachineGun". Drives instantiation in AttackManager.
+        /// Type field above is kept as display metadata only.
+        [Export] public string ImplementingClass { get; set; } = "";
+
+        public AttackInstance CreateRuntimeInstance()
+        {
+            if (string.IsNullOrEmpty(ImplementingClass)) return null;
+            var type = System.Type.GetType(ImplementingClass);
+            if (type == null)
+            {
+                GD.PushWarning($"AttackData '{AttackId}': type '{ImplementingClass}' not found.");
+                return null;
+            }
+            return System.Activator.CreateInstance(type) as AttackInstance;
+        }
     }
 }
