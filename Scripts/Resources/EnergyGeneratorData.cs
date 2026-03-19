@@ -42,11 +42,11 @@ namespace Project187
 	/// The observer resolves its source from its parent AttackInstance in the scene tree.
 	public abstract partial class ObserverData : EnergyGeneratorData { }
 
-	/// Delivers EnergyPerEvent each time the parent attack hits an enemy.
+	/// Triggers its attack each time the parent attack hits an enemy.
 	[GlobalClass]
 	public partial class OnHitGeneratorData : ObserverData { }
 
-	/// Delivers EnergyPerEvent each time the parent attack kills an enemy.
+	/// Triggers its attack each time the parent attack kills an enemy.
 	[GlobalClass]
 	public partial class OnKillGeneratorData : ObserverData { }
 }
