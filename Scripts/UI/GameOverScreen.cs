@@ -10,8 +10,9 @@ namespace Project187
 			GetNode<Button>("Root/Center/VBox/RestartButton").Pressed += Restart;
 		}
 
-		public void ShowScreen()
+		public void ShowScreen(string title = "GAME OVER")
 		{
+			GetNode<Label>("Root/Center/VBox/Title").Text = title;
 			Show();
 		}
 

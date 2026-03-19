@@ -10,9 +10,12 @@ namespace Project187
 	{
 		private GameOverScreen _gameOverScreen;
 
+		private EnemySpawner _spawner;
+
 		public override void _Ready()
 		{
 			_gameOverScreen = GetNode<GameOverScreen>("GameOverScreen");
+			_spawner        = GetNode<EnemySpawner>("EnemySpawner");
 
 			var players = GetTree().GetNodesInGroup("Player");
 			if (players.Count == 0) return;
@@ -20,7 +23,12 @@ namespace Project187
 			var player = players[0] as Player;
 			if (player == null) return;
 
-			player.Died += _gameOverScreen.ShowScreen;
+			// Wire round and game-over signals
+			player.Died       += () => { _spawner.Stop(); _gameOverScreen.ShowScreen("GAME OVER"); };
+			_spawner.RoundOver += () => _gameOverScreen.ShowScreen("ROUND OVER");
+
+			// Start the round
+			_spawner.StartRound(player, GetNode("Enemies"));
 
 			// Only bootstrap if player has no starting generators configured
 			if (player.Stats?.StartingGenerators?.Count > 0) return;

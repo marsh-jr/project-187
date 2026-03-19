@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EnemyStats" format=3 uid="uid://enemystats001"]
+[gd_resource type="Resource" script_class="EnemyStats" format=3 uid="uid://ryreqv1al5aa"]
 
 [ext_resource type="Script" path="res://Scripts/Enemies/EnemyStats.cs" id="1"]
 

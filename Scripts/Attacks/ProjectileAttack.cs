@@ -14,15 +14,15 @@ namespace Project187
 
 			var fireParams = BuildBaseFireParams();
 			var stats      = GetComputedStats();
-			var owner      = OwnerPlayer; // still needed for Rotation (firing direction)
+
+			// Aim toward the nearest enemy; fall back to player rotation if none exist.
+			float baseAngle   = GetNearestEnemyDirection(spawnPosition).Angle();
+			float totalSpread = fireParams.SpreadAngleDegrees;
 
 			for (int i = 0; i < fireParams.ProjectileCount; i++)
 			{
 				var proj = Data.ProjectileScene.Instantiate<ProjectileNode>();
 
-				// Calculate spread direction
-				float baseAngle   = owner.Rotation; // face direction (0 = right)
-				float totalSpread = fireParams.SpreadAngleDegrees;
 				float angleOffset = fireParams.ProjectileCount > 1
 					? Mathf.DegToRad(totalSpread / (fireParams.ProjectileCount - 1) * i - totalSpread / 2f)
 					: 0f;
@@ -44,6 +44,24 @@ namespace Project187
 				var container = ProjectileContainer ?? GetTree().Root;
 				container.AddChild(proj);
 			}
+		}
+
+		private Vector2 GetNearestEnemyDirection(Vector2 from)
+		{
+			var enemies = GetTree().GetNodesInGroup("Enemies");
+			Node2D nearest = null;
+			float nearestDist = float.MaxValue;
+
+			foreach (var node in enemies)
+			{
+				if (node is not Node2D e) continue;
+				float d = from.DistanceSquaredTo(e.GlobalPosition);
+				if (d < nearestDist) { nearestDist = d; nearest = e; }
+			}
+
+			return nearest != null
+				? (nearest.GlobalPosition - from).Normalized()
+				: Vector2.Right.Rotated(OwnerPlayer.Rotation);
 		}
 	}
 }

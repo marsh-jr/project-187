@@ -16,4 +16,5 @@ theme_override_constants/margin_top = 12
 [node name="HpLabel" type="Label" parent="MarginContainer/VBox"]
 text = "HP: 100"
 
-[node name="EnergyContainer" type="VBoxContainer" parent="MarginContainer/VBox"]
+[node name="TimerLabel" type="Label" parent="MarginContainer/VBox"]
+text = "1:30"
