@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="EnemyStats" format=3 uid="uid://enemystats001"]
+
+[ext_resource type="Script" path="res://Scripts/Enemies/EnemyStats.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+MaxHp = 30.0
+Speed = 80.0
+ContactDamage = 5.0

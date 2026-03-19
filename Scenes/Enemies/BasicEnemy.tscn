@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://basicenemy001"]
 
 [ext_resource type="Script" path="res://Scripts/Enemies/BasicEnemy.cs" id="1"]
+[ext_resource type="Resource" uid="uid://enemystats001" path="res://Resources/BasicEnemyStats.tres" id="2"]
 
 [sub_resource type="CircleShape2D" id="1"]
 radius = 16.0
@@ -9,6 +10,7 @@ radius = 16.0
 collision_layer = 8
 collision_mask = 3
 script = ExtResource("1")
+Stats = ExtResource("2")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("1")

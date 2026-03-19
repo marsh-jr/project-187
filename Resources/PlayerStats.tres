@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="PlayerStats" format=3 uid="uid://playerstats001"]
+
+[ext_resource type="Script" path="res://Scripts/Player/PlayerStats.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+MaxHp = 100.0
+Speed = 200.0
