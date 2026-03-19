@@ -4,13 +4,14 @@ using Godot.Collections;
 namespace Project187
 {
 	/// Root scene script.
-	/// Bootstraps a test attack configuration when no generators are configured via PlayerStats,
-	/// so the game is immediately playable without needing .tres assets set up in the editor.
+	/// Shows the ChainBuilderScreen before each round; wires player and spawner signals.
 	public partial class Main : Node2D
 	{
-		private GameOverScreen _gameOverScreen;
-
-		private EnemySpawner _spawner;
+		private GameOverScreen    _gameOverScreen;
+		private EnemySpawner      _spawner;
+		private ChainBuilderScreen _chainBuilder;
+		private Player            _player;
+		private bool              _firstRound = true;
 
 		public override void _Ready()
 		{
@@ -19,107 +20,46 @@ namespace Project187
 
 			var players = GetTree().GetNodesInGroup("Player");
 			if (players.Count == 0) return;
+			_player = players[0] as Player;
+			if (_player == null) return;
 
-			var player = players[0] as Player;
-			if (player == null) return;
+			// Player death: stop spawner, show game-over overlay
+			_player.Died += () => { _spawner.Stop(); _gameOverScreen.ShowScreen("GAME OVER"); };
 
-			// Wire round and game-over signals
-			player.Died       += () => { _spawner.Stop(); _gameOverScreen.ShowScreen("GAME OVER"); };
-			_spawner.RoundOver += () => _gameOverScreen.ShowScreen("ROUND OVER");
+			// Round over: clear enemies and show the chain builder again
+			_spawner.RoundOver += OnRoundOver;
 
-			// Start the round
-			_spawner.StartRound(player, GetNode("Enemies"));
-
-			// Only bootstrap if player has no starting generators configured
-			if (player.Stats?.StartingGenerators?.Count > 0) return;
-
-			BootstrapTestAttacks(player);
+			// Chain builder (constructed in code -- no scene file needed)
+			_chainBuilder = new ChainBuilderScreen();
+			AddChild(_chainBuilder);
+			_chainBuilder.ChainConfirmed += OnChainConfirmed;
+			_chainBuilder.ShowForRound();
 		}
 
-		private void BootstrapTestAttacks(Player player)
+		private void OnChainConfirmed(Array<EnergyGeneratorData> generators)
 		{
-			var projectileScene = GD.Load<PackedScene>("res://Scenes/Attacks/Projectile.tscn");
-			var meleeScene      = GD.Load<PackedScene>("res://Scenes/Attacks/AreaEffect.tscn"); // placeholder visual
+			_player.AttackManager.Clear();
+			_player.AttackManager.Initialize(generators);
 
-			// ── Skewer — terminal melee lance (no chain) ───────────────────────────
-			var skewerData = new AttackData
+			if (_firstRound)
 			{
-				ImplementingClass  = "Project187.Skewer",
-				AttackId           = "Skewer",
-				AttackName         = "Skewer",
-				Type               = AttackType.Melee,
-				BaseDamage         = 20f,
-				CritChance         = 0.06f,
-				CritMultiplier     = 2.0f,
-				MeleeRange         = 250f,
-				AreaAngle          = 20f,
-				MaxAdaptationSlots = 2,
-				ChainSlots         = new Array<EnergyGeneratorData>()
-			};
-
-			// ── Aggressive Combat Processor — on-hit, fires Skewer ─────────────────
-			var aggressiveCPData = new AggressiveCombatProcessorData
+				_firstRound = false;
+				_spawner.StartRound(_player, GetNode("Enemies"));
+			}
+			else
 			{
-				ImplementingClass = "Project187.AggressiveCombatProcessor",
-				Attack            = skewerData
-				// EfficiencyMin/Max = 0.30/0.40 set by constructor
-			};
+				_spawner.RestartRound();
+			}
+		}
 
-			// ── Slam — 360° melee burst, chains into Aggressive CP → Skewer ────────
-			var slamData = new AttackData
-			{
-				ImplementingClass  = "Project187.Slam",
-				AttackId           = "Slam",
-				AttackName         = "Slam",
-				Type               = AttackType.Melee,
-				BaseDamage         = 25f,
-				CritChance         = 0.06f,
-				CritMultiplier     = 2.0f,
-				MeleeRange         = 100f,
-				AreaAngle          = 360f,
-				MaxAdaptationSlots = 2,
-				ChainSlots         = new Array<EnergyGeneratorData> { aggressiveCPData }
-			};
+		private void OnRoundOver()
+		{
+			// Remove any enemies still alive in the field
+			var enemyContainer = GetNode("Enemies");
+			foreach (var child in enemyContainer.GetChildren())
+				child.QueueFree();
 
-			// ── Precise Combat Processor — on-crit, fires Slam ─────────────────────
-			var preciseCPData = new PreciseCombatProcessorData
-			{
-				ImplementingClass = "Project187.PreciseCombatProcessor",
-				Attack            = slamData
-				// EfficiencyMin/Max = 1.00/1.15 set by constructor
-			};
-
-			// ── Machine Gun — 5-round burst, chains into Precise CP → Slam ─────────
-			var machineGunData = new AttackData
-			{
-				ImplementingClass  = "Project187.MachineGun",
-				AttackId           = "MachineGun",
-				AttackName         = "Machine Gun",
-				Type               = AttackType.Projectile,
-				BaseDamage         = 12f,
-				CritChance         = 0.06f,
-				CritMultiplier     = 2.0f,
-				ProjectileCount    = 5,
-				PierceCount        = 1,
-				SpreadAngleDegrees = 15f,
-				ProjectileSpeed    = 500f,
-				ProjectileDuration = 1.0f,
-				MaxAdaptationSlots = 3,
-				ProjectileScene    = projectileScene,
-				ChainSlots         = new Array<EnergyGeneratorData> { preciseCPData }
-			};
-
-			// ── Turbo Core — fast timed trigger, fires Machine Gun ──────────────────
-			var turboCoreData = new TurboCoreData
-			{
-				ImplementingClass = "Project187.TurboCore",
-				Attack            = machineGunData
-				// TriggerIntervalMin/Max = 0.7/0.9, EfficiencyMin/Max = 0.70/0.85 set by constructor
-			};
-
-			player.AttackManager.Initialize(new Array<EnergyGeneratorData> { turboCoreData });
-
-			GD.Print("[Main] Bootstrap: TurboCore → MachineGun → PreciseCP → Slam → AggressiveCP → Skewer");
+			_chainBuilder.ShowForRound();
 		}
 	}
 }

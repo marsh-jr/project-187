@@ -75,5 +75,15 @@ namespace Project187
 			AdaptationCategory.Melee      => attack is MeleeAttackBase,
 			_                             => false,
 		};
+
+		/// Frees all generator nodes and clears attack registrations.
+		/// Call before re-initializing for a new round with a different chain.
+		public void Clear()
+		{
+			foreach (var child in GetChildren())
+				child.QueueFree();
+			_activeAttacks.Clear();
+			_attackById.Clear();
+		}
 	}
 }

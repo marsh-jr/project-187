@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://basicenemy001" path="res://Scenes/Enemies/BasicEnemy.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://hud001" path="res://Scenes/UI/HUD.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://gameover001" path="res://Scenes/UI/GameOverScreen.tscn" id="4"]
-[ext_resource type="Script" path="res://Scripts/World/EnemySpawner.cs" id="5"]
+[ext_resource type="Script" uid="uid://w761m3o1rjci" path="res://Scripts/World/EnemySpawner.cs" id="5"]
 
 [node name="Main" type="Node2D" unique_id=2121482735]
 script = ExtResource("0")

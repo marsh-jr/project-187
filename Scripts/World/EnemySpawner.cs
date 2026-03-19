@@ -39,6 +39,15 @@ namespace Project187
 		/// Stop the round without emitting RoundOver (used on player death).
 		public void Stop() => _active = false;
 
+		/// Resets timer and re-activates the spawner without needing player/container params.
+		/// Call when starting a subsequent round after the first.
+		public void RestartRound()
+		{
+			TimeRemaining = RoundDuration;
+			_spawnTimer   = 0f;
+			_active       = true;
+		}
+
 		public override void _Process(double delta)
 		{
 			if (!_active) return;
