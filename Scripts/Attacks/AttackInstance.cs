@@ -96,10 +96,19 @@ namespace Project187
 				BouncesRemaining = 0,
 				SlowFactor       = 0f,
 				SlowDuration     = 0f,
+				IsCrit           = false,
 			};
 
 			foreach (var adaptation in Adaptations)
 				adaptation.OnHitEnemy(this, enemy, ref result);
+
+			// ── Crit roll (after adaptations have had their chance to modify damage) ──
+			var stats = GetComputedStats();
+			if (GD.Randf() < stats.CritChance)
+			{
+				result.DamageDealt *= stats.CritMultiplier;
+				result.IsCrit = true;
+			}
 
 			if (enemy is BasicEnemy basicEnemy)
 			{
@@ -109,9 +118,36 @@ namespace Project187
 				EmitSignal(SignalName.EnemyHit, this, enemy, result.DamageDealt);
 				if (died)
 					EmitSignal(SignalName.EnemyKilled, this, enemy);
+
+				SpawnDamageLabel(basicEnemy.GlobalPosition, result.DamageDealt, result.IsCrit);
 			}
 
 			return result;
+		}
+
+		private void SpawnDamageLabel(Vector2 worldPosition, float damage, bool isCrit)
+		{
+			var label = new Label();
+			label.Text = isCrit
+				? $"{Mathf.RoundToInt(damage)}!"
+				: $"{Mathf.RoundToInt(damage)}";
+
+			label.AddThemeColorOverride("font_color",
+				isCrit ? new Color(1f, 0.85f, 0f) : Colors.White);
+			label.AddThemeFontSizeOverride("font_size", isCrit ? 20 : 14);
+			label.ZIndex = 100;
+			label.GlobalPosition = worldPosition + new Vector2(-20f, -30f);
+
+			GetTree().CurrentScene.AddChild(label);
+
+			float duration = isCrit ? 1.1f : 0.75f;
+			var tween = label.CreateTween();
+			tween.SetParallel(true);
+			tween.TweenProperty(label, "position:y", label.Position.Y - 40f, duration)
+			     .SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Quad);
+			tween.TweenProperty(label, "modulate:a", 0f, duration)
+			     .SetEase(Tween.EaseType.In).SetTrans(Tween.TransitionType.Linear);
+			tween.TweenCallback(Callable.From(label.QueueFree)).SetDelay(duration);
 		}
 
 		// ── Stat Computation ───────────────────────────────────────────────────
@@ -126,6 +162,8 @@ namespace Project187
 				ProjectileSpeed = Data.ProjectileSpeed,
 				BeamLength      = Data.BeamLength,
 				MeleeRange      = Data.MeleeRange,
+				CritChance      = Data.CritChance,
+				CritMultiplier  = Data.CritMultiplier,
 			};
 
 			foreach (var adaptation in Adaptations)

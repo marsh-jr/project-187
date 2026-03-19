@@ -17,6 +17,8 @@ namespace Project187
 
 		// ── Base Stats ─────────────────────────────────────────────────────────
 		[Export] public float BaseDamage       { get; set; } = 10f;
+		[Export] public float CritChance       { get; set; } = 0.05f;  // 5 % default
+		[Export] public float CritMultiplier   { get; set; } = 2.0f;   // 2x default
 		[Export] public float ProjectileSpeed  { get; set; } = 400f;
 		[Export] public float AreaRadius       { get; set; } = 80f;
 		[Export] public float AreaDuration     { get; set; } = 1.5f;

@@ -40,6 +40,7 @@ namespace Project187
         public int   BouncesRemaining;
         public float SlowFactor;
         public float SlowDuration;
+        public bool  IsCrit;
     }
 
     /// Stat snapshot used by AreaAttack and HUD display; mutated by ModifyStats adaptations.
@@ -52,5 +53,7 @@ namespace Project187
         public float ProjectileSpeed;
         public float BeamLength;
         public float MeleeRange;
+        public float CritChance;
+        public float CritMultiplier;
     }
 }
