@@ -73,16 +73,17 @@ namespace Project187
 		// ── Trigger ────────────────────────────────────────────────────────────
 		/// Called by a generator or observer to fire this attack.
 		/// efficiency (0–1) scales the resulting damage.
-		public void Trigger(float efficiency)
+		/// spawnPosition overrides where the attack spawns; null defaults to the player's position.
+		public void Trigger(float efficiency, Vector2? spawnPosition = null)
 		{
 			EmitSignal(SignalName.AttackFired, this);
-			ExecuteFire(efficiency);
+			ExecuteFire(efficiency, spawnPosition ?? OwnerPlayer.GlobalPosition);
 		}
 
 		// ── Hooks ──────────────────────────────────────────────────────────────
 		/// Subclasses implement the actual spawn logic.
-		/// efficiency is applied to BaseDamage before spawning projectiles/areas.
-		protected abstract void ExecuteFire(float efficiency);
+		/// efficiency scales BaseDamage; spawnPosition is the resolved world-space origin.
+		protected abstract void ExecuteFire(float efficiency, Vector2 spawnPosition);
 
 		/// Called by ProjectileNode / AreaEffectNode when a hit is detected.
 		public HitResult RegisterHit(Node enemy, float rawDamage)

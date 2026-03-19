@@ -9,6 +9,9 @@ namespace Project187
 			=> source.EnemyKilled -= OnSourceKill;
 
 		private void OnSourceKill(AttackInstance source, Godot.Node enemy)
-			=> TargetAttack?.Trigger(Efficiency);
+		{
+			var pos = (enemy as Godot.Node2D)?.GlobalPosition;
+			TargetAttack?.Trigger(Efficiency, pos);
+		}
 	}
 }

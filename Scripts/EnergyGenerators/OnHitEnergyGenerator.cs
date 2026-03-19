@@ -9,6 +9,9 @@ namespace Project187
 			=> source.EnemyHit -= OnSourceHit;
 
 		private void OnSourceHit(AttackInstance source, Godot.Node enemy, float damage)
-			=> TargetAttack?.Trigger(Efficiency);
+		{
+			var pos = (enemy as Godot.Node2D)?.GlobalPosition;
+			TargetAttack?.Trigger(Efficiency, pos);
+		}
 	}
 }

@@ -6,7 +6,7 @@ namespace Project187
 	/// Full implementation in Phase 7.
 	public partial class BeamAttack : AttackInstance
 	{
-		protected override void ExecuteFire(float efficiency)
+		protected override void ExecuteFire(float efficiency, Vector2 spawnPosition)
 		{
 			var stats = GetComputedStats();
 			var owner = OwnerPlayer;

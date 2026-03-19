@@ -6,7 +6,7 @@ namespace Project187
 	/// Concrete attacks (e.g. MachineGun) inherit from this to express their type.
 	public abstract partial class ProjectileAttackBase : AttackInstance
 	{
-		protected override void ExecuteFire(float efficiency)
+		protected override void ExecuteFire(float efficiency, Vector2 spawnPosition)
 		{
 			if (Data.ProjectileScene == null)
 			{
@@ -16,7 +16,7 @@ namespace Project187
 
 			var fireParams = BuildBaseFireParams();
 			var stats      = GetComputedStats();
-			var owner      = OwnerPlayer;
+			var owner      = OwnerPlayer; // still needed for firing direction (Rotation)
 
 			for (int i = 0; i < fireParams.ProjectileCount; i++)
 			{
@@ -40,7 +40,7 @@ namespace Project187
 					bounces:      fireParams.RicochetBounces
 				);
 
-				proj.GlobalPosition = owner.GlobalPosition;
+				proj.GlobalPosition = spawnPosition;
 
 				var container = ProjectileContainer ?? GetTree().Root;
 				container.AddChild(proj);
