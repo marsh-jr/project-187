@@ -21,44 +21,79 @@ namespace Project187
 			float totalSpread = fireParams.SpreadAngleDegrees;
 			bool  radial      = Data.SpreadMode == ProjectileSpreadMode.Radial;
 			float lifetime    = Data.ProjectileDuration > 0f ? Data.ProjectileDuration : ProjectileNode.DefaultMaxLifetime;
+			float speed       = stats.ProjectileSpeed * fireParams.SpeedMultiplier;
+			float damage      = stats.BaseDamage * efficiency * fireParams.DamageMultiplier;
 
 			for (int i = 0; i < fireParams.ProjectileCount; i++)
 			{
-				var proj = Data.ProjectileScene.Instantiate<ProjectileNode>();
-
 				float angleOffset;
 				if (radial)
 				{
-					// Evenly spaced ring — ignore nearest-enemy direction
+					// Flak / radial ring: keep evenly spaced — that's the intended geometry
 					angleOffset = Mathf.DegToRad(360f / fireParams.ProjectileCount * i);
 				}
 				else
 				{
-					angleOffset = fireParams.ProjectileCount > 1
-						? Mathf.DegToRad(totalSpread / (fireParams.ProjectileCount - 1) * i - totalSpread / 2f)
+					// FanAim (MachineGun, Shotgun, …): randomise within the spread arc
+					angleOffset = totalSpread > 0f
+						? Mathf.DegToRad((GD.Randf() - 0.5f) * totalSpread)
 						: 0f;
 				}
 
-				Vector2 direction = radial
-					? Vector2.Right.Rotated(angleOffset)
-					: Vector2.Right.Rotated(baseAngle + angleOffset);
+				// Capture loop variables so the lambda closure is correct
+				int    shotIndex       = i;
+				float  capturedOffset  = angleOffset;
+				int    pierceCount     = fireParams.PierceCount;
+				bool   isHoming        = fireParams.IsHoming;
+				int    bounces         = fireParams.RicochetBounces;
 
-				proj.Initialize(
-					ownerAttack:  this,
-					direction:    direction,
-					speed:        stats.ProjectileSpeed * fireParams.SpeedMultiplier,
-					damage:       stats.BaseDamage * efficiency * fireParams.DamageMultiplier,
-					pierceCount:  fireParams.PierceCount,
-					isHoming:     fireParams.IsHoming,
-					bounces:      fireParams.RicochetBounces,
-					maxLifetime:  lifetime
-				);
-
-				proj.GlobalPosition = spawnPosition;
-
-				var container = ProjectileContainer ?? GetTree().Root;
-				container.AddChild(proj);
+				if (Data.BurstInterval <= 0f || i == 0)
+				{
+					SpawnProjectile(baseAngle, capturedOffset, radial, speed, damage,
+						pierceCount, isHoming, bounces, lifetime, spawnPosition);
+				}
+				else
+				{
+					float delay = Data.BurstInterval * shotIndex;
+					var timer = GetTree().CreateTimer(delay, false);
+					timer.Timeout += () =>
+					{
+						if (!IsInstanceValid(this)) return;
+						SpawnProjectile(baseAngle, capturedOffset, radial, speed, damage,
+							pierceCount, isHoming, bounces, lifetime, spawnPosition);
+					};
+				}
 			}
+		}
+
+		private void SpawnProjectile(
+			float baseAngle, float angleOffset, bool radial,
+			float speed, float damage, int pierceCount,
+			bool isHoming, int bounces, float lifetime,
+			Vector2 spawnPosition)
+		{
+			if (Data.ProjectileScene == null || !IsInstanceValid(this)) return;
+
+			Vector2 direction = radial
+				? Vector2.Right.Rotated(angleOffset)
+				: Vector2.Right.Rotated(baseAngle + angleOffset);
+
+			var proj = Data.ProjectileScene.Instantiate<ProjectileNode>();
+			proj.Initialize(
+				ownerAttack:  this,
+				direction:    direction,
+				speed:        speed,
+				damage:       damage,
+				pierceCount:  pierceCount,
+				isHoming:     isHoming,
+				bounces:      bounces,
+				maxLifetime:  lifetime
+			);
+			proj.GlobalPosition = spawnPosition;
+
+			var container = ProjectileContainer ?? GetTree().Root;
+			if (IsInstanceValid(container))
+				container.AddChild(proj);
 		}
 	}
 }

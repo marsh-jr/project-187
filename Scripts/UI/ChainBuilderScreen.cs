@@ -399,6 +399,7 @@ namespace Project187
 					data.Type = AttackType.Projectile; data.BaseDamage = 12f; data.CritChance = 0.06f;
 					data.ProjectileCount = 5; data.PierceCount = 1; data.SpreadAngleDegrees = 15f;
 					data.ProjectileSpeed = 500f; data.ProjectileDuration = 1.0f;
+					data.BurstInterval = 0.08f; // 80 ms between shots
 					data.SpreadMode = ProjectileSpreadMode.FanAim;
 					data.ProjectileScene = projScene;
 					break;

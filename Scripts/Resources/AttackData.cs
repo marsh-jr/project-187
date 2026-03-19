@@ -23,6 +23,8 @@ namespace Project187
 		[Export] public int   PierceCount        { get; set; } = 0;
 		[Export] public float SpreadAngleDegrees { get; set; } = 0f;
 		[Export] public float ProjectileDuration { get; set; } = 1f;
+		/// Seconds between individual shots in a burst. 0 = all shots fire simultaneously.
+		[Export] public float BurstInterval      { get; set; } = 0f;
 		[Export] public ProjectileSpreadMode SpreadMode { get; set; } = ProjectileSpreadMode.FanAim;
 		[Export] public float AreaAngle          { get; set; } = 360f;
 		[Export] public float ProjectileSpeed  { get; set; } = 400f;
