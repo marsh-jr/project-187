@@ -15,7 +15,7 @@ namespace Project187
             }
 
             var stats = GetComputedStats();
-            var owner = GetParent<AttackManager>().GetParent<Player>();
+            var owner = OwnerPlayer;
 
             var area = Data.ProjectileScene.Instantiate<AreaEffectNode>();
             area.Initialize(this, stats);

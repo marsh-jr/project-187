@@ -4,7 +4,7 @@ using Godot.Collections;
 namespace Project187
 {
 	/// Root scene script.
-	/// Bootstraps a test attack configuration when no attacks are configured via PlayerStats,
+	/// Bootstraps a test attack configuration when no generators are configured via PlayerStats,
 	/// so the game is immediately playable without needing .tres assets set up in the editor.
 	public partial class Main : Node2D
 	{
@@ -22,8 +22,8 @@ namespace Project187
 
 			player.Died += _gameOverScreen.ShowScreen;
 
-			// Only bootstrap if player has no starting attacks configured
-			if (player.Stats?.StartingAttacks?.Count > 0) return;
+			// Only bootstrap if player has no starting generators configured
+			if (player.Stats?.StartingGenerators?.Count > 0) return;
 
 			BootstrapTestAttacks(player);
 		}
@@ -33,30 +33,8 @@ namespace Project187
 			var projectileScene = GD.Load<PackedScene>("res://Scenes/Attacks/Projectile.tscn");
 			var areaScene       = GD.Load<PackedScene>("res://Scenes/Attacks/AreaEffect.tscn");
 
-			// Machine Gun: timed generator, fires ~every 1 second
-			var machineGun = new AttackData
-			{
-				ImplementingClass  = "Project187.MachineGun",
-				AttackId           = "MachineGun",
-				AttackName         = "Machine Gun",
-				Type               = AttackType.Projectile,
-				BaseDamage         = 15f,
-				EnergyThreshold    = 100f,
-				ProjectileSpeed    = 500f,
-				MaxAdaptationSlots = 3,
-				ProjectileScene    = projectileScene,
-				GeneratorConfigs   = new Array<EnergyGeneratorData>
-				{
-					new TimedGeneratorData
-					{
-						ImplementingClass = "Project187.TimedEnergyGenerator",
-						EnergyPerSecond   = 100f
-					}
-				}
-			};
-
-			// Shock Pulse: on-hit observer, fires after 3 MachineGun hits
-			var shockPulse = new AttackData
+			// Shock Pulse — terminal attack (no chain slots of its own)
+			var shockPulseData = new AttackData
 			{
 				ImplementingClass  = "Project187.ShockPulse",
 				AttackId           = "ShockPulse",
@@ -69,21 +47,43 @@ namespace Project187
 				PulseInterval      = 0.3f,
 				MaxAdaptationSlots = 2,
 				ProjectileScene    = areaScene,
-				GeneratorConfigs   = new Array<EnergyGeneratorData>
+				ChainSlots         = new Array<EnergyGeneratorData>()
+			};
+
+			// Machine Gun — chains into ShockPulse via an OnHit observer (3 hits = 1 pulse)
+			var machineGunData = new AttackData
+			{
+				ImplementingClass  = "Project187.MachineGun",
+				AttackId           = "MachineGun",
+				AttackName         = "Machine Gun",
+				Type               = AttackType.Projectile,
+				BaseDamage         = 15f,
+				EnergyThreshold    = 100f,
+				ProjectileSpeed    = 500f,
+				MaxAdaptationSlots = 3,
+				ProjectileScene    = projectileScene,
+				ChainSlots         = new Array<EnergyGeneratorData>
 				{
 					new OnHitGeneratorData
 					{
 						ImplementingClass = "Project187.OnHitEnergyGenerator",
-						SourceAttackId    = "MachineGun",
-						EnergyPerEvent    = 34f  // 3 hits = ~100 energy = fires
+						EnergyPerEvent    = 34f,   // 3 MachineGun hits → 102 energy → ShockPulse fires
+						Attack            = shockPulseData
 					}
 				}
 			};
 
-			var startingAttacks = new Array<AttackData> { machineGun, shockPulse };
-			player.AttackManager.Initialize(startingAttacks);
+			// Root generator: timed, fires MachineGun ~once per second
+			var timedGen = new TimedGeneratorData
+			{
+				ImplementingClass = "Project187.TimedEnergyGenerator",
+				EnergyPerSecond   = 100f,
+				Attack            = machineGunData
+			};
 
-			GD.Print("[Main] Bootstrapped test attacks: MachineGun -> ShockPulse chain");
+			player.AttackManager.Initialize(new Array<EnergyGeneratorData> { timedGen });
+
+			GD.Print("[Main] Bootstrapped: TimedGen → MachineGun → OnHitObserver → ShockPulse");
 		}
 
 		/// Debug: press Tab to equip a PiercingAdaptation on the MachineGun.
@@ -94,10 +94,10 @@ namespace Project187
 				var players = GetTree().GetNodesInGroup("Player");
 				if (players.Count == 0) return;
 
-				var player = (players[0] as Player)?.AttackManager;
-				if (player == null) return;
+				var manager = (players[0] as Player)?.AttackManager;
+				if (manager == null) return;
 
-				bool equipped = player.TryEquipAdaptation("MachineGun", new PiercingAdaptation());
+				bool equipped = manager.TryEquipAdaptation("MachineGun", new PiercingAdaptation());
 				GD.Print(equipped
 					? "[Debug] Piercing adaptation equipped on MachineGun."
 					: "[Debug] Could not equip Piercing (slots full or type mismatch).");

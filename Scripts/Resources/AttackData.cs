@@ -36,8 +36,11 @@ namespace Project187
 		/// The scene to instantiate when this attack fires (ProjectileNode or AreaEffectNode).
 		[Export] public PackedScene ProjectileScene { get; set; }
 
-		// ── Generators ─────────────────────────────────────────────────────────
-		[Export] public Array<EnergyGeneratorData> GeneratorConfigs { get; set; } = new();
+		// ── Chain Slots ────────────────────────────────────────────────────────
+		/// Observers chained off this attack (must be ObserverData entries).
+		/// Each observer is created as a child of this AttackInstance and watches
+		/// this attack's signals to power the next attack in the chain.
+		[Export] public Array<EnergyGeneratorData> ChainSlots { get; set; } = new();
 
 		// ── Default Adaptations ────────────────────────────────────────────────
 		[Export] public Array<AdaptationData> DefaultAdaptations { get; set; } = new();

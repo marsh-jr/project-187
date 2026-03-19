@@ -8,7 +8,7 @@ namespace Project187
         protected override void ExecuteFire()
         {
             var stats = GetComputedStats();
-            var owner = GetParent<AttackManager>().GetParent<Player>();
+            var owner = OwnerPlayer;
             GD.Print($"{GetType().Name} '{AttackId}' fired from {owner.GlobalPosition} with length {stats.BeamLength}");
             // TODO Phase 7: instantiate beam scene
         }

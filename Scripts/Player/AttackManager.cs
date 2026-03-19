@@ -9,53 +9,38 @@ namespace Project187
 		private readonly List<AttackInstance> _activeAttacks = new();
 		private readonly System.Collections.Generic.Dictionary<string, AttackInstance> _attackById = new();
 
-		public void Initialize(Array<AttackData> startingAttacks)
+		/// Initialize from a list of root generators.
+		/// Each generator creates and owns its attack chain as child nodes — no two-pass needed.
+		public void Initialize(Array<EnergyGeneratorData> startingGenerators)
 		{
-			// Phase 1: instantiate all AttackInstances and register them by ID
-			foreach (var data in startingAttacks)
+			foreach (var genConfig in startingGenerators)
 			{
-				if (data == null) continue;
+				if (genConfig == null) continue;
 
-				var instance = data.CreateRuntimeInstance();
-				if (instance == null)
+				var node = genConfig.CreateRuntimeInstance();
+				if (node == null)
 				{
-					GD.PushWarning($"AttackManager: could not instantiate attack '{data.AttackId}' — ImplementingClass not set or invalid.");
+					GD.PushWarning($"AttackManager: could not instantiate root generator — ImplementingClass not set or invalid.");
 					continue;
 				}
 
-				AddChild(instance);
-				instance.Initialize(data, this);
-				_activeAttacks.Add(instance);
+				AddChild(node);
 
-				if (!string.IsNullOrEmpty(data.AttackId))
-					_attackById[data.AttackId] = instance;
+				if (node is EnergyGeneratorBase gen)
+					gen.Initialize(genConfig, this);
+				else
+					GD.PushWarning($"AttackManager: root entry '{genConfig.ImplementingClass}' is not an EnergyGeneratorBase.");
 			}
+		}
 
-			// Phase 2: create generators (after all attacks registered so cross-refs resolve)
-			foreach (var data in startingAttacks)
-			{
-				if (data == null) continue;
-				if (!_attackById.TryGetValue(data.AttackId, out var targetAttack)) continue;
-
-				foreach (var genConfig in data.GeneratorConfigs)
-				{
-					if (genConfig == null) continue;
-
-					var node = genConfig.CreateRuntimeInstance();
-					if (node == null)
-					{
-						GD.PushWarning($"AttackManager: could not instantiate generator for '{data.AttackId}' — ImplementingClass not set or invalid.");
-						continue;
-					}
-
-					AddChild(node);
-
-					if (node is EnergyGenerator gen)
-						gen.Initialize(targetAttack, genConfig, this);
-					else if (node is EnergyObserver obs)
-						obs.Initialize(targetAttack, genConfig, this);
-				}
-			}
+		/// Register an attack for adaptation equipping and UI queries.
+		/// Called by EnergyGeneratorBase.CreateAndInitChildAttack() for every attack in the chain.
+		public void RegisterAttack(AttackInstance attack)
+		{
+			if (attack == null) return;
+			_activeAttacks.Add(attack);
+			if (!string.IsNullOrEmpty(attack.AttackId))
+				_attackById[attack.AttackId] = attack;
 		}
 
 		public AttackInstance GetAttackById(string id)

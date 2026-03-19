@@ -22,12 +22,20 @@ namespace Project187
 		protected AttackManager Manager    { get; private set; }
 		protected Node ProjectileContainer { get; private set; }
 
+		/// Cached Player reference. Resolved via the AttackManager (which is a direct child of
+		/// Player) so the parent-chain navigation is safe regardless of how deep this attack
+		/// sits in the generator/observer hierarchy.
+		protected Player OwnerPlayer       { get; private set; }
+
 		// ── Init ───────────────────────────────────────────────────────────────
 		public void Initialize(AttackData data, AttackManager manager)
 		{
-			Data = data;
+			Data    = data;
 			AttackId = data.AttackId;
 			Manager = manager;
+
+			// AttackManager is always a direct child of Player — safe path regardless of nesting.
+			OwnerPlayer = manager.GetParent<Player>();
 
 			// Roll slot count: 0..MaxAdaptationSlots
 			AdaptationSlotCount = GD.RandRange(0, data.MaxAdaptationSlots);
@@ -42,6 +50,25 @@ namespace Project187
 
 			// Cache the projectile container node from Main scene
 			ProjectileContainer = GetTree().Root.FindChild("Projectiles", true, false) as Node;
+
+			// Spawn chain-slot observers as children of this attack.
+			// Each observer watches this attack's signals and powers the next attack in the chain.
+			foreach (var slotConfig in data.ChainSlots)
+			{
+				if (slotConfig == null) continue;
+
+				var node = slotConfig.CreateRuntimeInstance();
+				if (node is EnergyObserver observer)
+				{
+					AddChild(observer);               // parent = this attack — read by observer.Initialize()
+					observer.Initialize(slotConfig, manager);
+				}
+				else
+				{
+					GD.PushWarning($"AttackInstance '{AttackId}': ChainSlot entry is not an EnergyObserver. Only observer types are valid chain slots.");
+					node?.QueueFree();
+				}
+			}
 		}
 
 		// ── Energy ─────────────────────────────────────────────────────────────

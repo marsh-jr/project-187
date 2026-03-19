@@ -2,42 +2,46 @@ using Godot;
 
 namespace Project187
 {
-    /// Abstract base for energy sources that observe another attack's events.
-    /// Holds the SourceAttackId and owns the resolve-by-ID logic so subclasses
-    /// only need to implement Subscribe / Unsubscribe.
-    public abstract partial class EnergyObserver : Node
-    {
-        public AttackInstance TargetAttack    { get; protected set; }
-        public EnergyGeneratorData Config     { get; protected set; }
-        protected AttackInstance SourceAttack { get; private set; }
+	/// Abstract base for energy sources that observe a parent attack's events.
+	/// The source attack is resolved from the parent node in the scene tree —
+	/// no string ID lookup needed. The observer must be AddChild'd to an AttackInstance
+	/// before Initialize() is called.
+	public abstract partial class EnergyObserver : EnergyGeneratorBase
+	{
+		/// The attack whose signals this observer watches.
+		/// Always the AttackInstance that owns this observer as a child.
+		protected AttackInstance SourceAttack { get; private set; }
 
-        public void Initialize(AttackInstance target, EnergyGeneratorData config, AttackManager manager)
-        {
-            TargetAttack = target;
-            Config       = config;
+		public override void Initialize(EnergyGeneratorData config, AttackManager manager)
+		{
+			Config = config;
 
-            string sourceId = (config as ObserverData)?.SourceAttackId ?? "";
-            if (string.IsNullOrEmpty(sourceId))
-            {
-                GD.PushWarning($"{GetType().Name}: no SourceAttackId set.");
-                return;
-            }
+			// Source is the parent AttackInstance — set via AddChild before Initialize is called.
+			SourceAttack = GetParent<AttackInstance>();
+			if (SourceAttack == null)
+			{
+				GD.PushWarning($"{GetType().Name}: parent is not an AttackInstance. Observer must be added as a child of its source attack.");
+				return;
+			}
 
-            SourceAttack = manager.GetAttackById(sourceId);
-            if (SourceAttack != null)
-                Subscribe(SourceAttack);
-        }
+			// Create and own the next attack in the chain.
+			ChildAttack  = CreateAndInitChildAttack(config.Attack, manager);
+			TargetAttack = ChildAttack;
 
-        /// Wire signal subscriptions to the resolved source attack.
-        protected abstract void Subscribe(AttackInstance source);
+			// Wire signal subscriptions now that both ends are ready.
+			Subscribe(SourceAttack);
+		}
 
-        /// Remove signal subscriptions from the source attack.
-        protected abstract void Unsubscribe(AttackInstance source);
+		/// Wire signal subscriptions to the source attack.
+		protected abstract void Subscribe(AttackInstance source);
 
-        public override void _ExitTree()
-        {
-            if (SourceAttack != null)
-                Unsubscribe(SourceAttack);
-        }
-    }
+		/// Remove signal subscriptions from the source attack.
+		protected abstract void Unsubscribe(AttackInstance source);
+
+		public override void _ExitTree()
+		{
+			if (SourceAttack != null)
+				Unsubscribe(SourceAttack);
+		}
+	}
 }

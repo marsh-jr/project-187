@@ -16,8 +16,8 @@ namespace Project187
 			CurrentHp = Stats?.MaxHp ?? 100f;
 			AttackManager = GetNode<AttackManager>("AttackManager");
 
-			if (Stats?.StartingAttacks != null)
-				AttackManager.Initialize(Stats.StartingAttacks);
+			if (Stats?.StartingGenerators?.Count > 0)
+				AttackManager.Initialize(Stats.StartingGenerators);
 		}
 
 		public override void _PhysicsProcess(double delta)
