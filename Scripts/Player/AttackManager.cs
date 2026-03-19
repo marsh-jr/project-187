@@ -71,7 +71,7 @@ namespace Project187
 		{
 			AdaptationCategory.Projectile => attack is ProjectileAttackBase,
 			AdaptationCategory.Area       => attack is AreaAttackBase,
-			AdaptationCategory.Beam       => attack is BeamAttackBase,
+			AdaptationCategory.Beam       => false,
 			AdaptationCategory.Melee      => attack is MeleeAttackBase,
 			_                             => false,
 		};

@@ -6,7 +6,7 @@ namespace Project187
     {
         public AdaptationCategory Category => AdaptationCategory.Projectile;
 
-        public void OnFire(AttackInstance attack, ref AttackFireParams p) => p.IsPiercing = true;
+        public void OnFire(AttackInstance attack, ref AttackFireParams p) => p.PierceCount = 999;
         public void OnHitEnemy(AttackInstance attack, Node enemy, ref HitResult r) { }
         public void ModifyStats(AttackInstance attack, ref AttackRuntimeStats s) { }
     }

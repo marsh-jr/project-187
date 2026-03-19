@@ -2,37 +2,41 @@ using Godot;
 
 namespace Project187
 {
-    /// Fired by ProjectileAttack. Moves in a straight line, reports hits to its owner AttackInstance.
+    /// Fired by a ProjectileAttack. Moves in a straight line, reports hits to its owner AttackInstance.
     public partial class ProjectileNode : Area2D
     {
+        public const float DefaultMaxLifetime = 5f;
+
         private AttackInstance _ownerAttack;
         private Vector2 _direction;
         private float _speed;
         private float _damage;
-        private bool _isPiercing;
-        private bool _isHoming;
-        private int _bouncesRemaining;
-        private Node _homingTarget;
+        private int   _piercesLeft;
+        private bool  _isHoming;
+        private int   _bouncesRemaining;
+        private Node  _homingTarget;
 
-        private const float MaxLifetime = 5f;
+        private float _maxLifetime;
         private float _lifetime;
 
         public void Initialize(
             AttackInstance ownerAttack,
-            Vector2 direction,
-            float speed,
-            float damage,
-            bool isPiercing,
-            bool isHoming,
-            int bounces)
+            Vector2        direction,
+            float          speed,
+            float          damage,
+            int            pierceCount,
+            bool           isHoming,
+            int            bounces,
+            float          maxLifetime = DefaultMaxLifetime)
         {
-            _ownerAttack     = ownerAttack;
-            _direction       = direction.Normalized();
-            _speed           = speed;
-            _damage          = damage;
-            _isPiercing      = isPiercing;
-            _isHoming        = isHoming;
+            _ownerAttack      = ownerAttack;
+            _direction        = direction.Normalized();
+            _speed            = speed;
+            _damage           = damage;
+            _piercesLeft      = pierceCount;
+            _isHoming         = isHoming;
             _bouncesRemaining = bounces;
+            _maxLifetime      = maxLifetime > 0f ? maxLifetime : DefaultMaxLifetime;
         }
 
         public override void _Ready()
@@ -43,7 +47,7 @@ namespace Project187
         public override void _PhysicsProcess(double delta)
         {
             _lifetime += (float)delta;
-            if (_lifetime >= MaxLifetime)
+            if (_lifetime >= _maxLifetime)
             {
                 QueueFree();
                 return;
@@ -70,7 +74,6 @@ namespace Project187
             if (result.ShouldRicochet && _bouncesRemaining > 0)
             {
                 _bouncesRemaining--;
-                // Simple ricochet: reverse and find new nearest enemy direction
                 var nearest = FindNearestEnemy();
                 if (nearest is Node2D n2d)
                     _direction = (n2d.GlobalPosition - GlobalPosition).Normalized();
@@ -82,13 +85,13 @@ namespace Project187
             if (result.ShouldSplit)
                 SpawnSplitProjectiles();
 
-            if (!_isPiercing)
+            _piercesLeft--;
+            if (_piercesLeft < 0)
                 QueueFree();
         }
 
         private void SpawnSplitProjectiles()
         {
-            // Spawn two projectiles at ±30° from current direction
             for (int i = -1; i <= 1; i += 2)
             {
                 var proj = Duplicate() as ProjectileNode;
@@ -96,8 +99,8 @@ namespace Project187
                 proj._direction       = _direction.Rotated(Mathf.DegToRad(30f * i));
                 proj._ownerAttack     = _ownerAttack;
                 proj._speed           = _speed;
-                proj._damage          = _damage * 0.6f; // split does reduced damage
-                proj._isPiercing      = false;
+                proj._damage          = _damage * 0.6f;
+                proj._piercesLeft     = 0;
                 proj._isHoming        = false;
                 proj._bouncesRemaining = 0;
                 proj.GlobalPosition   = GlobalPosition;

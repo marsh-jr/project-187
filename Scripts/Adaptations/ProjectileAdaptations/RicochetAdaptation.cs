@@ -10,7 +10,7 @@ namespace Project187
         public void OnFire(AttackInstance attack, ref AttackFireParams p)
         {
             p.RicochetBounces += Bounces;
-            p.IsPiercing       = true; // must pierce to continue after bounce
+            if (p.PierceCount < 999) p.PierceCount = Mathf.Max(p.PierceCount, Bounces); // must pierce to continue after bounce
         }
         public void OnHitEnemy(AttackInstance attack, Node enemy, ref HitResult r) => r.ShouldRicochet = true;
         public void ModifyStats(AttackInstance attack, ref AttackRuntimeStats s) { }

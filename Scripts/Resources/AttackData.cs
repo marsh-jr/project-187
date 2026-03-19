@@ -19,6 +19,12 @@ namespace Project187
 		[Export] public float BaseDamage       { get; set; } = 10f;
 		[Export] public float CritChance       { get; set; } = 0.05f;  // 5 % default
 		[Export] public float CritMultiplier   { get; set; } = 2.0f;   // 2x default
+		[Export] public int   ProjectileCount    { get; set; } = 1;
+		[Export] public int   PierceCount        { get; set; } = 0;
+		[Export] public float SpreadAngleDegrees { get; set; } = 0f;
+		[Export] public float ProjectileDuration { get; set; } = 1f;
+		[Export] public ProjectileSpreadMode SpreadMode { get; set; } = ProjectileSpreadMode.FanAim;
+		[Export] public float AreaAngle          { get; set; } = 360f;
 		[Export] public float ProjectileSpeed  { get; set; } = 400f;
 		[Export] public float AreaRadius       { get; set; } = 80f;
 		[Export] public float AreaDuration     { get; set; } = 1.5f;

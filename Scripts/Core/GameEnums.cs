@@ -23,4 +23,10 @@ namespace Project187
         Melee      = 3,
         Universal  = 99
     }
+
+    public enum ProjectileSpreadMode
+    {
+        FanAim,   // fan toward nearest enemy (default)
+        Radial    // evenly spaced 360° ring (Flak)
+    }
 }

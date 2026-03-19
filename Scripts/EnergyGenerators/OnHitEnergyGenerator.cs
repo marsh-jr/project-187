@@ -14,4 +14,7 @@ namespace Project187
 			TargetAttack?.Trigger(Efficiency, pos);
 		}
 	}
+
+	/// On-hit processor. Efficiency 30–40%.
+	public partial class AggressiveCombatProcessor : OnHitEnergyGenerator { }
 }

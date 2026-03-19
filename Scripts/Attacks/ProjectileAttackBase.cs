@@ -17,28 +17,41 @@ namespace Project187
 			var fireParams = BuildBaseFireParams();
 			var stats      = GetComputedStats();
 
-			// Aim toward the nearest enemy; fall back to player rotation if none exist.
 			float baseAngle   = GetNearestEnemyDirection(spawnPosition).Angle();
 			float totalSpread = fireParams.SpreadAngleDegrees;
+			bool  radial      = Data.SpreadMode == ProjectileSpreadMode.Radial;
+			float lifetime    = Data.ProjectileDuration > 0f ? Data.ProjectileDuration : ProjectileNode.DefaultMaxLifetime;
 
 			for (int i = 0; i < fireParams.ProjectileCount; i++)
 			{
 				var proj = Data.ProjectileScene.Instantiate<ProjectileNode>();
 
-				float angleOffset = fireParams.ProjectileCount > 1
-					? Mathf.DegToRad(totalSpread / (fireParams.ProjectileCount - 1) * i - totalSpread / 2f)
-					: 0f;
+				float angleOffset;
+				if (radial)
+				{
+					// Evenly spaced ring — ignore nearest-enemy direction
+					angleOffset = Mathf.DegToRad(360f / fireParams.ProjectileCount * i);
+				}
+				else
+				{
+					angleOffset = fireParams.ProjectileCount > 1
+						? Mathf.DegToRad(totalSpread / (fireParams.ProjectileCount - 1) * i - totalSpread / 2f)
+						: 0f;
+				}
 
-				Vector2 direction = Vector2.Right.Rotated(baseAngle + angleOffset);
+				Vector2 direction = radial
+					? Vector2.Right.Rotated(angleOffset)
+					: Vector2.Right.Rotated(baseAngle + angleOffset);
 
 				proj.Initialize(
 					ownerAttack:  this,
 					direction:    direction,
 					speed:        stats.ProjectileSpeed * fireParams.SpeedMultiplier,
 					damage:       stats.BaseDamage * efficiency * fireParams.DamageMultiplier,
-					isPiercing:   fireParams.IsPiercing,
+					pierceCount:  fireParams.PierceCount,
 					isHoming:     fireParams.IsHoming,
-					bounces:      fireParams.RicochetBounces
+					bounces:      fireParams.RicochetBounces,
+					maxLifetime:  lifetime
 				);
 
 				proj.GlobalPosition = spawnPosition;
@@ -46,26 +59,6 @@ namespace Project187
 				var container = ProjectileContainer ?? GetTree().Root;
 				container.AddChild(proj);
 			}
-		}
-
-		/// Returns a normalised direction from <paramref name="from"/> toward the nearest enemy.
-		/// Falls back to the player's facing direction if no enemies are present.
-		private Vector2 GetNearestEnemyDirection(Vector2 from)
-		{
-			var enemies = GetTree().GetNodesInGroup("Enemies");
-			Node2D nearest = null;
-			float nearestDist = float.MaxValue;
-
-			foreach (var node in enemies)
-			{
-				if (node is not Node2D e) continue;
-				float d = from.DistanceSquaredTo(e.GlobalPosition);
-				if (d < nearestDist) { nearestDist = d; nearest = e; }
-			}
-
-			return nearest != null
-				? (nearest.GlobalPosition - from).Normalized()
-				: Vector2.Right.Rotated(OwnerPlayer.Rotation);
 		}
 	}
 }

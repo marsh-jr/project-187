@@ -18,7 +18,7 @@ namespace Project187
 		public override void Initialize(EnergyGeneratorData config, AttackManager manager)
 		{
 			Config     = config;
-			Efficiency = config.Efficiency;
+			Efficiency = Mathf.Lerp(config.EfficiencyMin, config.EfficiencyMax, GD.Randf());
 
 			// Source is the parent AttackInstance — set via AddChild before Initialize is called.
 			SourceAttack = GetParent<AttackInstance>();

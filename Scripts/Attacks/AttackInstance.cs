@@ -11,6 +11,7 @@ namespace Project187
 		[Signal] public delegate void EnemyHitEventHandler(AttackInstance source, Node enemy, float damage);
 		[Signal] public delegate void EnemyKilledEventHandler(AttackInstance source, Node enemy);
 		[Signal] public delegate void AttackFiredEventHandler(AttackInstance source);
+		[Signal] public delegate void EnemyCritHitEventHandler(AttackInstance source, Node enemy, float damage);
 
 		// ── State ──────────────────────────────────────────────────────────────
 		public AttackData Data             { get; private set; }
@@ -110,6 +111,9 @@ namespace Project187
 				result.IsCrit = true;
 			}
 
+			if (result.IsCrit)
+				EmitSignal(SignalName.EnemyCritHit, this, enemy, result.DamageDealt);
+
 			if (enemy is BasicEnemy basicEnemy)
 			{
 				basicEnemy.TakeDamage(result.DamageDealt);
@@ -144,9 +148,9 @@ namespace Project187
 			var tween = label.CreateTween();
 			tween.SetParallel(true);
 			tween.TweenProperty(label, "position:y", label.Position.Y - 40f, duration)
-			     .SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Quad);
+				 .SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Quad);
 			tween.TweenProperty(label, "modulate:a", 0f, duration)
-			     .SetEase(Tween.EaseType.In).SetTrans(Tween.TransitionType.Linear);
+				 .SetEase(Tween.EaseType.In).SetTrans(Tween.TransitionType.Linear);
 			tween.TweenCallback(Callable.From(label.QueueFree)).SetDelay(duration);
 		}
 
@@ -177,19 +181,39 @@ namespace Project187
 		{
 			var p = new AttackFireParams
 			{
-				ProjectileCount     = 1,
-				SpeedMultiplier     = 1f,
-				DamageMultiplier    = 1f,
-				IsPiercing          = false,
-				IsHoming            = false,
-				RicochetBounces     = 0,
-				SpreadAngleDegrees  = 0f,
+				ProjectileCount    = Data.ProjectileCount > 0 ? Data.ProjectileCount : 1,
+				SpeedMultiplier    = 1f,
+				DamageMultiplier   = 1f,
+				PierceCount        = Data.PierceCount,
+				IsHoming           = false,
+				RicochetBounces    = 0,
+				SpreadAngleDegrees = Data.SpreadAngleDegrees,
 			};
 
 			foreach (var adaptation in Adaptations)
 				adaptation.OnFire(this, ref p);
 
 			return p;
+		}
+
+		/// Returns a normalised direction from <paramref name="from"/> toward the nearest enemy.
+		/// Falls back to the player's facing direction if no enemies are present.
+		protected Vector2 GetNearestEnemyDirection(Vector2 from)
+		{
+			var enemies = GetTree().GetNodesInGroup("Enemies");
+			Node2D nearest = null;
+			float nearestDist = float.MaxValue;
+
+			foreach (var node in enemies)
+			{
+				if (node is not Node2D e) continue;
+				float d = from.DistanceSquaredTo(e.GlobalPosition);
+				if (d < nearestDist) { nearestDist = d; nearest = e; }
+			}
+
+			return nearest != null
+				? (nearest.GlobalPosition - from).Normalized()
+				: Vector2.Right.Rotated(OwnerPlayer.Rotation);
 		}
 	}
 }

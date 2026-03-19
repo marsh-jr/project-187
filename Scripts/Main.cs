@@ -39,78 +39,87 @@ namespace Project187
 		private void BootstrapTestAttacks(Player player)
 		{
 			var projectileScene = GD.Load<PackedScene>("res://Scenes/Attacks/Projectile.tscn");
-			var areaScene       = GD.Load<PackedScene>("res://Scenes/Attacks/AreaEffect.tscn");
+			var meleeScene      = GD.Load<PackedScene>("res://Scenes/Attacks/AreaEffect.tscn"); // placeholder visual
 
-			// Shock Pulse — terminal attack (no chain slots of its own)
-			// Triggered by OnHit observer at 30% efficiency → 25 × 0.3 = 7.5 dmg per pulse tick
-			var shockPulseData = new AttackData
+			// ── Skewer — terminal melee lance (no chain) ───────────────────────────
+			var skewerData = new AttackData
 			{
-				ImplementingClass  = "Project187.ShockPulse",
-				AttackId           = "ShockPulse",
-				AttackName         = "Shock Pulse",
-				Type               = AttackType.Area,
-				BaseDamage         = 25f,
-				AreaRadius         = 100f,
-				AreaDuration       = 1.2f,
-				PulseInterval      = 0.3f,
+				ImplementingClass  = "Project187.Skewer",
+				AttackId           = "Skewer",
+				AttackName         = "Skewer",
+				Type               = AttackType.Melee,
+				BaseDamage         = 20f,
+				CritChance         = 0.06f,
+				CritMultiplier     = 2.0f,
+				MeleeRange         = 250f,
+				AreaAngle          = 20f,
 				MaxAdaptationSlots = 2,
-				ProjectileScene    = areaScene,
 				ChainSlots         = new Array<EnergyGeneratorData>()
 			};
 
-			// Machine Gun — triggered by EnergyCore at 90% efficiency → 15 × 0.9 = 13.5 dmg
-			// Chains into ShockPulse: every hit triggers ShockPulse at 30% efficiency
+			// ── Aggressive Combat Processor — on-hit, fires Skewer ─────────────────
+			var aggressiveCPData = new AggressiveCombatProcessorData
+			{
+				ImplementingClass = "Project187.AggressiveCombatProcessor",
+				Attack            = skewerData
+				// EfficiencyMin/Max = 0.30/0.40 set by constructor
+			};
+
+			// ── Slam — 360° melee burst, chains into Aggressive CP → Skewer ────────
+			var slamData = new AttackData
+			{
+				ImplementingClass  = "Project187.Slam",
+				AttackId           = "Slam",
+				AttackName         = "Slam",
+				Type               = AttackType.Melee,
+				BaseDamage         = 25f,
+				CritChance         = 0.06f,
+				CritMultiplier     = 2.0f,
+				MeleeRange         = 100f,
+				AreaAngle          = 360f,
+				MaxAdaptationSlots = 2,
+				ChainSlots         = new Array<EnergyGeneratorData> { aggressiveCPData }
+			};
+
+			// ── Precise Combat Processor — on-crit, fires Slam ─────────────────────
+			var preciseCPData = new PreciseCombatProcessorData
+			{
+				ImplementingClass = "Project187.PreciseCombatProcessor",
+				Attack            = slamData
+				// EfficiencyMin/Max = 1.00/1.15 set by constructor
+			};
+
+			// ── Machine Gun — 5-round burst, chains into Precise CP → Slam ─────────
 			var machineGunData = new AttackData
 			{
 				ImplementingClass  = "Project187.MachineGun",
 				AttackId           = "MachineGun",
 				AttackName         = "Machine Gun",
 				Type               = AttackType.Projectile,
-				BaseDamage         = 15f,
+				BaseDamage         = 12f,
+				CritChance         = 0.06f,
+				CritMultiplier     = 2.0f,
+				ProjectileCount    = 5,
+				PierceCount        = 1,
+				SpreadAngleDegrees = 15f,
 				ProjectileSpeed    = 500f,
+				ProjectileDuration = 1.0f,
 				MaxAdaptationSlots = 3,
 				ProjectileScene    = projectileScene,
-				ChainSlots         = new Array<EnergyGeneratorData>
-				{
-					new OnHitGeneratorData
-					{
-						ImplementingClass = "Project187.OnHitEnergyGenerator",
-						Efficiency        = 0.30f,
-						Attack            = shockPulseData
-					}
-				}
+				ChainSlots         = new Array<EnergyGeneratorData> { preciseCPData }
 			};
 
-			// EnergyCore: triggers MachineGun every 0.9s at 90% damage efficiency
-			var energyCore = new EnergyCoreData
+			// ── Turbo Core — fast timed trigger, fires Machine Gun ──────────────────
+			var turboCoreData = new TurboCoreData
 			{
-				ImplementingClass = "Project187.EnergyCore",
-				TriggerInterval   = 0.9f,
-				Efficiency        = 0.90f,
+				ImplementingClass = "Project187.TurboCore",
 				Attack            = machineGunData
+				// TriggerIntervalMin/Max = 0.7/0.9, EfficiencyMin/Max = 0.70/0.85 set by constructor
 			};
 
-			player.AttackManager.Initialize(new Array<EnergyGeneratorData> { energyCore });
+			player.AttackManager.Initialize(new Array<EnergyGeneratorData> { turboCoreData });
 
-			GD.Print("[Main] Bootstrapped: EnergyCore (0.9s) → MachineGun (90%) → OnHit → ShockPulse (30%)");
-		}
-
-		/// Debug: press Tab to equip a PiercingAdaptation on the MachineGun.
-		public override void _Input(InputEvent @event)
-		{
-			if (@event is InputEventKey key && key.Pressed && key.Keycode == Key.Tab)
-			{
-				var players = GetTree().GetNodesInGroup("Player");
-				if (players.Count == 0) return;
-
-				var manager = (players[0] as Player)?.AttackManager;
-				if (manager == null) return;
-
-				bool equipped = manager.TryEquipAdaptation("MachineGun", new PiercingAdaptation());
-				GD.Print(equipped
-					? "[Debug] Piercing adaptation equipped on MachineGun."
-					: "[Debug] Could not equip Piercing (slots full or type mismatch).");
-			}
+			GD.Print("[Main] Bootstrap: TurboCore → MachineGun → PreciseCP → Slam → AggressiveCP → Skewer");
 		}
 	}
 }

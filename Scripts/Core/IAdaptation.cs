@@ -25,7 +25,7 @@ namespace Project187
         public int   ProjectileCount;
         public float SpeedMultiplier;
         public float DamageMultiplier;
-        public bool  IsPiercing;
+        public int   PierceCount;   // 0 = no pierce; 999 = effectively unlimited
         public bool  IsHoming;
         public int   RicochetBounces;
         public float SpreadAngleDegrees;
